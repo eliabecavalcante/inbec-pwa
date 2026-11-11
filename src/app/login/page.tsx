@@ -41,17 +41,20 @@ export default function LoginPage() {
 
   return (
     <div className="min-h-screen w-full flex items-center justify-center bg-gradient-to-br from-blue-900 via-blue-800 to-blue-950 relative overflow-hidden">
-      <div className="absolute top-10 left-10 w-48 h-48 bg-blue-500/30 rounded-full mix-blend-overlay filter blur-3xl"></div>
-      <div className="absolute bottom-20 right-10 w-56 h-56 bg-cyan-400/20 rounded-full mix-blend-overlay filter blur-3xl"></div>
-      <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-64 h-64 bg-indigo-500/20 rounded-full mix-blend-overlay filter blur-3xl"></div>
+      
+      {/* ⚠️ CORREÇÃO APLICADA: pointer-events-none adicionado aos fundos decorativos */}
+      <div className="absolute top-10 left-10 w-48 h-48 bg-blue-500/30 rounded-full mix-blend-overlay filter blur-3xl pointer-events-none"></div>
+      <div className="absolute bottom-20 right-10 w-56 h-56 bg-cyan-400/20 rounded-full mix-blend-overlay filter blur-3xl pointer-events-none"></div>
+      <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-64 h-64 bg-indigo-500/20 rounded-full mix-blend-overlay filter blur-3xl pointer-events-none"></div>
 
-      <div className="relative z-10 w-11/12 max-w-sm rounded-3xl border border-white/20 bg-white/10 p-8 backdrop-blur-md shadow-2xl">
-        <div className="text-center mb-8">
+      {/* ⚠️ CORREÇÃO APLICADA: z-50 e pointer-events-auto adicionados ao container do formulário */}
+      <div className="relative z-50 pointer-events-auto w-11/12 max-w-sm rounded-3xl border border-white/20 bg-white/10 p-8 backdrop-blur-md shadow-2xl">
+        <div className="text-center mb-8 pointer-events-none">
           <h1 className="text-3xl font-bold text-white tracking-wider">INBEC</h1>
           <p className="text-blue-100/70 mt-2 text-sm">Portal Acadêmico</p>
         </div>
 
-        <form onSubmit={handleLogin} className="flex flex-col gap-5">
+        <form onSubmit={handleLogin} className="flex flex-col gap-5 relative z-50 pointer-events-auto">
           <div className="flex flex-col gap-1">
             <label className="text-white/80 text-sm ml-1" htmlFor="email">Email</label>
             <input
