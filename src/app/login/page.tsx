@@ -40,61 +40,88 @@ export default function LoginPage() {
   };
 
   return (
-    <div className="min-h-screen w-full flex items-center justify-center bg-gradient-to-br from-blue-900 via-blue-800 to-blue-950 relative overflow-hidden">
+    <div className="min-h-screen w-full flex items-center justify-center bg-slate-50 relative overflow-hidden selection:bg-blue-500/30">
       
-      {/* ⚠️ CORREÇÃO APLICADA: pointer-events-none adicionado aos fundos decorativos */}
-      <div className="absolute top-10 left-10 w-48 h-48 bg-blue-500/30 rounded-full mix-blend-overlay filter blur-3xl pointer-events-none"></div>
-      <div className="absolute bottom-20 right-10 w-56 h-56 bg-cyan-400/20 rounded-full mix-blend-overlay filter blur-3xl pointer-events-none"></div>
-      <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-64 h-64 bg-indigo-500/20 rounded-full mix-blend-overlay filter blur-3xl pointer-events-none"></div>
+      {/* Efeitos Decorativos "Liquid Glass" de Fundo - Com pointer-events-none para não bloquear o toque */}
+      <div className="absolute top-[-10%] left-[-10%] w-[30rem] h-[30rem] bg-blue-500/15 rounded-full filter blur-[100px] pointer-events-none"></div>
+      <div className="absolute bottom-[-10%] right-[-10%] w-[25rem] h-[25rem] bg-red-500/10 rounded-full filter blur-[100px] pointer-events-none"></div>
+      <div className="absolute top-[40%] left-[60%] w-[20rem] h-[20rem] bg-indigo-400/10 rounded-full filter blur-[90px] pointer-events-none"></div>
 
-      {/* ⚠️ CORREÇÃO APLICADA: z-50 e pointer-events-auto adicionados ao container do formulário */}
-      <div className="relative z-50 pointer-events-auto w-11/12 max-w-sm rounded-3xl border border-white/20 bg-white/10 p-8 backdrop-blur-md shadow-2xl">
-        <div className="text-center mb-8 pointer-events-none">
-          <h1 className="text-3xl font-bold text-white tracking-wider">INBEC</h1>
-          <p className="text-blue-100/70 mt-2 text-sm">Portal Acadêmico</p>
+      {/* Container Principal do Formulário - Z-index alto e pointer-events-auto garantem a digitação */}
+      <div className="relative z-50 pointer-events-auto w-11/12 max-w-sm rounded-[2rem] border border-slate-200/60 bg-white/80 p-8 md:p-10 backdrop-blur-2xl shadow-[0_8px_30px_rgb(0,0,0,0.04)]">
+        
+        {/* Cabeçalho do Login */}
+        <div className="text-center mb-10 pointer-events-none flex flex-col items-center">
+          <div className="w-16 h-16 bg-blue-600 rounded-2xl flex items-center justify-center shadow-lg shadow-blue-600/20 mb-4">
+             <span className="text-white font-black text-2xl tracking-widest">IN</span>
+          </div>
+          <h1 className="text-2xl font-black text-slate-800 tracking-tight">Portal INBEC</h1>
+          <p className="text-slate-500 mt-1 text-sm font-medium">Acesso Académico</p>
         </div>
 
+        {/* Formulário */}
         <form onSubmit={handleLogin} className="flex flex-col gap-5 relative z-50 pointer-events-auto">
-          <div className="flex flex-col gap-1">
-            <label className="text-white/80 text-sm ml-1" htmlFor="email">Email</label>
+          
+          <div className="flex flex-col gap-1.5">
+            <label className="text-xs font-bold text-slate-500 uppercase tracking-wider ml-1" htmlFor="email">
+              E-mail Institucional
+            </label>
             <input
               type="email"
               id="email"
               value={email}
               onChange={(e) => setEmail(e.target.value)}
               required
-              className="w-full rounded-xl border border-white/20 bg-white/5 px-4 py-3 text-white placeholder-white/40 outline-none backdrop-blur-sm transition-all focus:border-white/50 focus:bg-white/10"
+              className="w-full rounded-2xl border border-slate-200 bg-white/90 px-4 py-3.5 text-slate-800 placeholder-slate-400 outline-none transition-all focus:border-blue-500 focus:ring-4 focus:ring-blue-500/10"
               placeholder="aluno@inbec.edu.br"
             />
           </div>
 
-          <div className="flex flex-col gap-1">
-            <label className="text-white/80 text-sm ml-1" htmlFor="senha">Senha</label>
+          <div className="flex flex-col gap-1.5">
+            <label className="text-xs font-bold text-slate-500 uppercase tracking-wider ml-1" htmlFor="senha">
+              Senha de Acesso
+            </label>
             <input
               type="password"
               id="senha"
               value={password}
               onChange={(e) => setPassword(e.target.value)}
               required
-              className="w-full rounded-xl border border-white/20 bg-white/5 px-4 py-3 text-white placeholder-white/40 outline-none backdrop-blur-sm transition-all focus:border-white/50 focus:bg-white/10"
+              className="w-full rounded-2xl border border-slate-200 bg-white/90 px-4 py-3.5 text-slate-800 placeholder-slate-400 outline-none transition-all focus:border-blue-500 focus:ring-4 focus:ring-blue-500/10"
               placeholder="••••••••"
             />
           </div>
 
           {errorMsg && (
-            <p className="text-red-400 text-sm text-center bg-red-900/20 py-2 rounded-lg border border-red-500/20">
+            <div className="flex items-center gap-2 text-red-600 text-sm font-bold justify-center bg-red-50 py-3 rounded-xl border border-red-100 animate-in fade-in zoom-in duration-300">
+              <svg className="w-5 h-5 shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8v4m0 4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" /></svg>
               {errorMsg}
-            </p>
+            </div>
           )}
 
           <button
             type="submit"
             disabled={loading}
-            className="mt-4 w-full rounded-xl bg-white/20 py-3 font-semibold text-white backdrop-blur-md transition-all hover:bg-white/30 active:scale-95 border border-white/30 shadow-lg disabled:opacity-50 disabled:cursor-not-allowed"
+            className="mt-4 w-full rounded-2xl bg-blue-600 py-3.5 font-bold text-white transition-all hover:bg-blue-700 active:scale-[0.98] shadow-lg shadow-blue-600/30 disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-2"
           >
-            {loading ? 'Entrando...' : 'Entrar'}
+            {loading ? (
+              <>
+                <div className="w-5 h-5 border-2 border-white/30 border-t-white rounded-full animate-spin"></div>
+                Autenticar...
+              </>
+            ) : (
+              'Entrar no Portal'
+            )}
           </button>
         </form>
+        
+        {/* Rodapé Fictício */}
+        <div className="mt-8 text-center pointer-events-none">
+          <p className="text-[10px] font-bold text-slate-400 uppercase tracking-widest">
+            Esqueceu a senha? Procure a secretaria.
+          </p>
+        </div>
+
       </div>
     </div>
   );
