@@ -4,6 +4,7 @@ import React, { useState, useEffect } from 'react';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
 import { supabase } from '@/lib/supabase';
+import Student from './student';
 
 export default function AdminDashboard() {
   const router = useRouter();
@@ -298,12 +299,13 @@ export default function AdminDashboard() {
 
           {/* ================= VIEW: CADASTRO DE USUÁRIOS ================= */}
           {activeView === 'users' && (
-            <div className="max-w-4xl mx-auto animate-in fade-in slide-in-from-bottom-4 duration-500">
+            <div className="max-w-4xl mx-auto animate-in fade-in slide-in-from-bottom-4 duration-500 space-y-8">
               <div className="mb-8">
                 <h2 className="text-2xl font-semibold text-white">Gestão de Usuários</h2>
                 <p className="text-slate-400 mt-1">Matricule novos membros e defina os seus níveis de acesso.</p>
               </div>
 
+              {/* Formulário de Cadastro */}
               <div className="bg-white/[0.03] border border-white/10 rounded-3xl p-8 backdrop-blur-xl relative overflow-hidden shadow-2xl">
                 <div className="absolute top-0 right-0 w-32 h-32 bg-emerald-500/10 filter blur-[50px]"></div>
                 
@@ -358,6 +360,13 @@ export default function AdminDashboard() {
                   </div>
                 </form>
               </div>
+
+              {/* Tabela de Estudantes (Componente Injetado) */}
+              <div className="mt-12">
+                <h3 className="text-xl font-medium text-white mb-6">Alunos Registrados no Sistema</h3>
+                <Student />
+              </div>
+
             </div>
           )}
         </div>
