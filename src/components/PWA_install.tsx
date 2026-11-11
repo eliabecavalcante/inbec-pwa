@@ -1,6 +1,7 @@
 'use client';
 
 import React, { useEffect, useState } from 'react';
+import { supabase } from '@/lib/supabase';
 
 interface BeforeInstallPromptEvent extends Event {
   readonly platforms: string[];
@@ -16,48 +17,79 @@ export default function PWA_install() {
   const [isVisible, setIsVisible] = useState(false);
   const [isIOS, setIsIOS] = useState(false);
   const [viewCount, setViewCount] = useState(1);
+  const [userId, setUserId] = useState<string | null>(null);
 
   useEffect(() => {
     // 1. Se já instalou nativamente, não mostra nada
     if (window.matchMedia('(display-mode: standalone)').matches) return;
 
-    // 2. Simulação de Banco de Dados: Verifica o status final do aluno
-    const statusFinal = localStorage.getItem('pwa_status');
-    if (statusFinal === 'consegui' || statusFinal === 'nao_consegui') {
-      return; // Se ele já respondeu na 3ª vez, nunca mais mostra
-    }
+    // 2. Previne que um simples 'F5' conte como um novo login na sessão
+    if (sessionStorage.getItem('pwa_checked')) return;
 
-    // 3. Lê quantas vezes o aviso já apareceu
-    const contagemAtual = parseInt(localStorage.getItem('pwa_view_count') || '0');
-    
-    // Se já passou de 3 vezes, aborta
-    if (contagemAtual >= 3) return;
-
-    const proximaContagem = contagemAtual + 1;
-    setViewCount(proximaContagem);
-
-    const userAgent = window.navigator.userAgent.toLowerCase();
-    const isAppleDevice = /iphone|ipad|ipod/.test(userAgent);
-
-    // Lógica para iOS (iPhone/iPad)
-    if (isAppleDevice) {
-      setIsIOS(true);
-      const timer = setTimeout(() => {
-        setIsVisible(true);
-        localStorage.setItem('pwa_view_count', proximaContagem.toString());
-      }, 2000);
-      return () => clearTimeout(timer);
-    }
-
-    // Lógica para Android/Desktop
+    // Handler nativo do Android
     const handler = (e: Event) => {
       e.preventDefault();
       setDeferredPrompt(e as BeforeInstallPromptEvent);
       setIsVisible(true);
-      localStorage.setItem('pwa_view_count', proximaContagem.toString());
+    };
+    window.addEventListener('beforeinstallprompt', handler);
+
+    // Lógica do Supabase
+    const initDB = async () => {
+      const { data: { session } } = await supabase.auth.getSession();
+      if (!session) return;
+      
+      const uid = session.user.id;
+      setUserId(uid);
+
+      // Verifica o status do aluno no banco
+      const { data, error } = await supabase
+        .from('pwa_status')
+        .select('*')
+        .eq('user_id', uid)
+        .single();
+
+      // Se já resolveu na 3ª vez (conseguiu ou não), nunca mais mostra
+      if (data && (data.status === 'consegui' || data.status === 'nao_consegui')) {
+        return; 
+      }
+
+      let proximaContagem = 1;
+
+      if (error && error.code === 'PGRST116') {
+        // Primeiro acesso do aluno: Cria registro
+        await supabase.from('pwa_status').insert({ user_id: uid, login_count: 1, status: 'pending' });
+      } else if (data) {
+        // Acessos seguintes: Atualiza contador
+        proximaContagem = data.login_count + 1;
+        if (proximaContagem <= 3) {
+          await supabase.from('pwa_status').update({ login_count: proximaContagem }).eq('user_id', uid);
+        }
+      }
+
+      // Se passou de 3 vezes e ainda está pendente, aborta (para não irritar o aluno eternamente)
+      if (proximaContagem > 3) return;
+      
+      setViewCount(proximaContagem);
+      sessionStorage.setItem('pwa_checked', 'true');
+
+      const userAgent = window.navigator.userAgent.toLowerCase();
+      const isAppleDevice = /iphone|ipad|ipod/.test(userAgent);
+
+      // Lógica de exibição para iOS (iPhone/iPad)
+      if (isAppleDevice) {
+        setIsIOS(true);
+        setTimeout(() => setIsVisible(true), 2000);
+      } 
+      // Lógica de exibição para Android na 3ª vez
+      // (Força a exibição para garantir que os botões de feedback apareçam, mesmo se o evento nativo falhar)
+      else if (proximaContagem === 3) {
+        setTimeout(() => setIsVisible(true), 1500);
+      }
     };
 
-    window.addEventListener('beforeinstallprompt', handler);
+    initDB();
+
     return () => window.removeEventListener('beforeinstallprompt', handler);
   }, []);
 
@@ -67,29 +99,31 @@ export default function PWA_install() {
     if (!deferredPrompt) return;
     deferredPrompt.prompt();
     const { outcome } = await deferredPrompt.userChoice;
+    
     if (outcome === 'accepted') {
-      // Se instalou direto, já marca como sucesso no banco
-      localStorage.setItem('pwa_status', 'consegui');
+      if (userId) {
+        await supabase.from('pwa_status').update({ status: 'consegui' }).eq('user_id', userId);
+      }
       setIsVisible(false);
     }
     setDeferredPrompt(null);
   };
 
   const handleCiente = () => {
-    setIsVisible(false); // Apenas fecha. A contagem já foi salva no useEffect.
+    setIsVisible(false); 
   };
 
-  const handleConsegui = () => {
-    // FUTURO: Aqui entrará a chamada API para o Supabase: await supabase.from('users').update({ pwa_installed: true })
-    console.log('Métrica ADM: Aluno conseguiu instalar');
-    localStorage.setItem('pwa_status', 'consegui');
+  const handleConsegui = async () => {
+    if (userId) {
+      await supabase.from('pwa_status').update({ status: 'consegui' }).eq('user_id', userId);
+    }
     setIsVisible(false);
   };
 
-  const handleNaoConsegui = () => {
-    // FUTURO: Aqui entrará a chamada API para alertar o ADM
-    console.log('Métrica ADM: Aluno NÃO conseguiu instalar');
-    localStorage.setItem('pwa_status', 'nao_consegui');
+  const handleNaoConsegui = async () => {
+    if (userId) {
+      await supabase.from('pwa_status').update({ status: 'nao_consegui' }).eq('user_id', userId);
+    }
     setIsVisible(false);
   };
 
@@ -115,7 +149,7 @@ export default function PWA_install() {
         {/* Renderiza na 1ª e 2ª vez */}
         {viewCount < 3 && (
           <>
-            {!isIOS && (
+            {!isIOS && deferredPrompt && (
               <button 
                 onClick={handleInstallAndroid} 
                 className="w-full py-2.5 rounded-xl bg-blue-600/90 text-white text-sm font-medium hover:bg-blue-600 transition-colors shadow-lg shadow-blue-900/50"
