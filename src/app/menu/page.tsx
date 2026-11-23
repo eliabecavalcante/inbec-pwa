@@ -15,6 +15,74 @@ interface NewsItem {
   accent: 'blue' | 'red' | 'indigo';
 }
 
+interface HeroHighlight {
+  id: string;
+  badge: string;
+  meta: string;
+  title: string;
+  subtitle: string;
+  footerLabel: string;
+  content: string;
+  gradient: string;
+  glow: string;
+  accent: 'blue' | 'red' | 'indigo';
+}
+
+const HERO_HIGHLIGHTS: HeroHighlight[] = [
+  {
+    id: 'hero-1',
+    badge: 'Evento Oficial',
+    meta: '28 a 30 Nov',
+    title: 'Semana de Tecnologia & Inovação INBEC',
+    subtitle: 'Palestras, workshops práticos e certificação de 20h complementares no auditório principal.',
+    footerLabel: 'Inscrições gratuitas pelo portal',
+    content:
+      'A Semana de Tecnologia & Inovação INBEC reúne profissionais do mercado, oficinas práticas de desenvolvimento web, cloud e inteligência artificial. Todos os alunos participantes recebem certificado digital válido para 20 horas de atividades complementares.',
+    gradient: 'from-blue-700 via-blue-600 to-indigo-600',
+    glow: 'bg-cyan-400/20',
+    accent: 'blue',
+  },
+  {
+    id: 'hero-2',
+    badge: 'Comunicado Reitoria',
+    meta: 'Semestre 2027.1',
+    title: 'Rematrícula Antecipada com Desconto Especial',
+    subtitle: 'Garanta sua vaga nas turmas da noite até 15 de dezembro com isenção na taxa administrativa.',
+    footerLabel: 'Disponível na aba Perfil • Financeiro',
+    content:
+      'O período de rematrícula antecipada para 2027.1 já está liberado para alunos regulares. Realizando a confirmação até o dia 15/12, você garante prioridade na escolha de horários e desconto automático na primeira mensalidade.',
+    gradient: 'from-indigo-700 via-blue-700 to-blue-600',
+    glow: 'bg-indigo-300/20',
+    accent: 'indigo',
+  },
+  {
+    id: 'hero-3',
+    badge: 'Carreiras & Estágio',
+    meta: '04 Dez • 18:00',
+    title: 'Feira de Estágios Tech no Campus',
+    subtitle: 'Empresas parceiras de Fortaleza recebendo currículos e fazendo entrevistas rápidas.',
+    footerLabel: 'Traga seu LinkedIn atualizado',
+    content:
+      'Mais de 15 empresas de tecnologia e startups parceiras estarão no pátio central do INBEC apresentando vagas de estágio em Front-End, Back-End, QA e Dados. Traga seu currículo ou QR Code do LinkedIn para participar das dinâmicas.',
+    gradient: 'from-blue-800 via-blue-700 to-sky-600',
+    glow: 'bg-red-400/20',
+    accent: 'blue',
+  },
+  {
+    id: 'hero-4',
+    badge: 'Aviso Importante',
+    meta: 'Semana AV2',
+    title: 'Biblioteca com Horário Estendido até 22h30',
+    subtitle: 'Salas de estudo em grupo e computadores liberados durante todo o período de provas.',
+    footerLabel: 'Acesso com sua Carteirinha Digital',
+    content:
+      'Para apoiar a preparação das avaliações finais (AV2), a biblioteca central e os laboratórios de estudo livre funcionarão em horário estendido até 22h30 de segunda a sexta, e aos sábados das 08h às 14h.',
+    gradient: 'from-slate-800 via-blue-900 to-blue-700',
+    glow: 'bg-blue-400/20',
+    accent: 'red',
+  },
+];
+
 const NEWS_LIST: NewsItem[] = [
   {
     id: 'news-1',
@@ -84,6 +152,9 @@ export default function MenuPage() {
   const [greeting, setGreeting] = useState('Olá');
   const [todayLabel, setTodayLabel] = useState('');
 
+  // Carrossel automático do widget de eventos/info da faculdade
+  const [currentSlide, setCurrentSlide] = useState(0);
+
   // Modais interativos
   const [selectedNews, setSelectedNews] = useState<NewsItem | null>(null);
   const [showNotifications, setShowNotifications] = useState(false);
@@ -146,9 +217,34 @@ export default function MenuPage() {
     setTodayLabel(formattedDate.charAt(0).toUpperCase() + formattedDate.slice(1));
   }, [router]);
 
+  // Troca automática dos eventos/info a cada 4,5 segundos (pausa enquanto algum modal está aberto)
+  useEffect(() => {
+    if (selectedNews || showNotifications) return;
+
+    const timer = setInterval(() => {
+      setCurrentSlide((prev) => (prev + 1) % HERO_HIGHLIGHTS.length);
+    }, 4500);
+
+    return () => clearInterval(timer);
+  }, [currentSlide, selectedNews, showNotifications]);
+
   const handleLogout = async () => {
     await supabase.auth.signOut();
     router.push('/login');
+  };
+
+  const activeHighlight = HERO_HIGHLIGHTS[currentSlide];
+
+  const handleOpenHighlightModal = (highlight: HeroHighlight) => {
+    setSelectedNews({
+      id: highlight.id,
+      tag: highlight.badge,
+      date: highlight.meta,
+      title: highlight.title,
+      summary: highlight.subtitle,
+      content: highlight.content,
+      accent: highlight.accent,
+    });
   };
 
   if (!isAuthorized) {
@@ -241,122 +337,80 @@ export default function MenuPage() {
       </header>
 
       <main className="relative z-10 w-full max-w-md mx-auto px-5 pt-6 flex flex-col gap-7">
-        {/* ================= CARD HERO: PRÓXIMA AULA & RESUMO ================= */}
-        <section className="bg-gradient-to-br from-blue-700 via-blue-600 to-indigo-600 p-5 rounded-[28px] text-white shadow-lg shadow-blue-600/20 relative overflow-hidden">
-          <div className="absolute -right-8 -top-8 w-36 h-36 bg-white/10 rounded-full pointer-events-none"></div>
-          <div className="absolute -left-6 -bottom-10 w-28 h-28 bg-red-500/20 rounded-full blur-xl pointer-events-none"></div>
+        {/* ================= WIDGET AUTOMÁTICO DE EVENTOS & INFO DA FACULDADE ================= */}
+        <section>
+          <div
+            className={`bg-gradient-to-br ${activeHighlight.gradient} p-5 rounded-[28px] text-white shadow-lg shadow-blue-600/20 relative overflow-hidden transition-all duration-700 min-h-[196px] flex flex-col justify-between`}
+          >
+            {/* Efeitos decorativos suaves */}
+            <div className="absolute -right-8 -top-8 w-36 h-36 bg-white/10 rounded-full pointer-events-none"></div>
+            <div
+              className={`absolute -left-6 -bottom-10 w-32 h-32 ${activeHighlight.glow} rounded-full blur-2xl pointer-events-none transition-colors duration-700`}
+            ></div>
 
-          <div className="relative z-10">
-            <div className="flex items-center justify-between gap-2">
-              <span className="inline-flex items-center gap-1.5 text-[10px] font-bold uppercase tracking-widest bg-white/20 backdrop-blur-md px-2.5 py-1 rounded-lg">
-                <span className="w-1.5 h-1.5 rounded-full bg-emerald-300 animate-pulse"></span>
-                Próxima Aula • 18:30
-              </span>
-              <span className="text-[11px] font-bold text-blue-100">2026.2</span>
-            </div>
+            {/* Conteúdo clicável com animação suave na troca automática */}
+            <button
+              type="button"
+              onClick={() => handleOpenHighlightModal(activeHighlight)}
+              className="relative z-10 text-left w-full flex-1 flex flex-col justify-between group"
+            >
+              <div
+                key={activeHighlight.id}
+                className="animate-in fade-in slide-in-from-right-3 duration-500"
+              >
+                <div className="flex items-center justify-between gap-2">
+                  <span className="inline-flex items-center gap-1.5 text-[10px] font-bold uppercase tracking-widest bg-white/20 backdrop-blur-md px-2.5 py-1 rounded-lg">
+                    <span className="w-1.5 h-1.5 rounded-full bg-emerald-300 animate-pulse"></span>
+                    {activeHighlight.badge}
+                  </span>
+                  <span className="text-[11px] font-bold text-blue-100">
+                    {activeHighlight.meta}
+                  </span>
+                </div>
 
-            <h2 className="text-lg font-black mt-3 leading-snug">
-              Desenvolvimento Web Full-Stack
-            </h2>
-            <p className="text-xs text-blue-100/90 font-medium mt-0.5">
-              Prof. Dr. Marcos • Laboratório 4
-            </p>
+                <h2 className="text-[17px] font-black mt-3 leading-snug line-clamp-2">
+                  {activeHighlight.title}
+                </h2>
+                <p className="text-xs text-blue-100/90 font-medium mt-1.5 leading-relaxed line-clamp-2">
+                  {activeHighlight.subtitle}
+                </p>
+              </div>
 
-            <div className="grid grid-cols-3 gap-2 mt-4 pt-3.5 border-t border-white/15">
-              <div>
-                <span className="text-[9px] uppercase tracking-wider text-blue-100/75 font-bold block">
-                  CR Geral
+              <div className="mt-4 pt-3 border-t border-white/15 flex items-center justify-between gap-2">
+                <span className="text-[11px] font-semibold text-blue-100 truncate">
+                  {activeHighlight.footerLabel}
                 </span>
-                <span className="text-base font-black">8.9</span>
-              </div>
-              <div>
-                <span className="text-[9px] uppercase tracking-wider text-blue-100/75 font-bold block">
-                  Presença
+                <span className="shrink-0 inline-flex items-center gap-1 text-[11px] font-bold text-white group-hover:translate-x-0.5 transition-transform">
+                  Ver mais
+                  <svg className="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                    <path
+                      strokeLinecap="round"
+                      strokeLinejoin="round"
+                      strokeWidth={2.4}
+                      d="M9 5l7 7-7 7"
+                    />
+                  </svg>
                 </span>
-                <span className="text-base font-black">95%</span>
               </div>
-              <div className="flex items-center justify-end">
-                <Link
-                  href="/courses/sala"
-                  className="text-[11px] font-bold bg-white text-blue-700 hover:bg-blue-50 px-3 py-1.5 rounded-xl shadow-sm active:scale-95 transition-all"
-                >
-                  Abrir sala
-                </Link>
-              </div>
+            </button>
+
+            {/* Indicadores de Slide (pílulas clicáveis) */}
+            <div className="relative z-10 flex items-center justify-center gap-1.5 mt-3">
+              {HERO_HIGHLIGHTS.map((item, idx) => (
+                <button
+                  key={item.id}
+                  type="button"
+                  aria-label={`Ir para destaque ${idx + 1}`}
+                  onClick={() => setCurrentSlide(idx)}
+                  className={`h-1.5 rounded-full transition-all duration-300 ${
+                    idx === currentSlide
+                      ? 'w-6 bg-white'
+                      : 'w-1.5 bg-white/35 hover:bg-white/60'
+                  }`}
+                />
+              ))}
             </div>
           </div>
-        </section>
-
-        {/* ================= ATALHOS RÁPIDOS ================= */}
-        <section className="grid grid-cols-4 gap-2.5">
-          <Link
-            href="/courses"
-            className="bg-white/90 backdrop-blur-xl border border-slate-200/70 p-3 rounded-2xl shadow-sm flex flex-col items-center gap-1.5 active:scale-95 transition-all hover:border-blue-200"
-          >
-            <div className="w-9 h-9 rounded-xl bg-blue-50 text-blue-600 flex items-center justify-center">
-              <svg className="w-4.5 h-4.5 w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                <path
-                  strokeLinecap="round"
-                  strokeLinejoin="round"
-                  strokeWidth={1.8}
-                  d="M12 6.253v13m0-13C10.832 5.477 9.246 5 7.5 5S4.168 5.477 3 6.253v13C4.168 18.477 5.754 18 7.5 18s3.332.477 4.5 1.253m0-13C13.168 5.477 14.754 5 16.5 5c1.747 0 3.332.477 4.5 1.253v13C19.832 18.477 18.247 18 16.5 18c-1.746 0-3.332.477-4.5 1.253"
-                />
-              </svg>
-            </div>
-            <span className="text-[10px] font-bold text-slate-700">Matérias</span>
-          </Link>
-
-          <Link
-            href="/homework"
-            className="bg-white/90 backdrop-blur-xl border border-slate-200/70 p-3 rounded-2xl shadow-sm flex flex-col items-center gap-1.5 active:scale-95 transition-all hover:border-amber-200"
-          >
-            <div className="w-9 h-9 rounded-xl bg-amber-50 text-amber-600 flex items-center justify-center">
-              <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                <path
-                  strokeLinecap="round"
-                  strokeLinejoin="round"
-                  strokeWidth={1.8}
-                  d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2m-6 9l2 2 4-4"
-                />
-              </svg>
-            </div>
-            <span className="text-[10px] font-bold text-slate-700">Entregas</span>
-          </Link>
-
-          <Link
-            href="/profile"
-            className="bg-white/90 backdrop-blur-xl border border-slate-200/70 p-3 rounded-2xl shadow-sm flex flex-col items-center gap-1.5 active:scale-95 transition-all hover:border-indigo-200"
-          >
-            <div className="w-9 h-9 rounded-xl bg-indigo-50 text-indigo-600 flex items-center justify-center">
-              <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                <path
-                  strokeLinecap="round"
-                  strokeLinejoin="round"
-                  strokeWidth={1.8}
-                  d="M10 6H5a2 2 0 00-2 2v9a2 2 0 002 2h14a2 2 0 002-2V8a2 2 0 00-2-2h-5m-4 0V5a2 2 0 114 0v1m-4 0a2 2 0 104 0m-5 8a2 2 0 100-4 2 2 0 000 4zm0 0c1.306 0 2.417.835 2.83 2M9 14a3.001 3.001 0 00-2.83 2M15 11h3m-3 4h2"
-                />
-              </svg>
-            </div>
-            <span className="text-[10px] font-bold text-slate-700">ID Digital</span>
-          </Link>
-
-          <button
-            type="button"
-            onClick={() => setShowNotifications(true)}
-            className="bg-white/90 backdrop-blur-xl border border-slate-200/70 p-3 rounded-2xl shadow-sm flex flex-col items-center gap-1.5 active:scale-95 transition-all hover:border-red-200"
-          >
-            <div className="w-9 h-9 rounded-xl bg-red-50 text-red-600 flex items-center justify-center">
-              <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                <path
-                  strokeLinecap="round"
-                  strokeLinejoin="round"
-                  strokeWidth={1.8}
-                  d="M15 17h5l-1.405-1.405A2.032 2.032 0 0118 14.158V11a6.002 6.002 0 00-4-5.659V5a2 2 0 10-4 0v.341C7.67 6.165 6 8.388 6 11v3.159c0 .538-.214 1.055-.595 1.436L4 17h5m6 0v1a3 3 0 11-6 0v-1m6 0H9"
-                />
-              </svg>
-            </div>
-            <span className="text-[10px] font-bold text-slate-700">Avisos</span>
-          </button>
         </section>
 
         {/* ================= INFORMATIVO DE ATIVIDADES (CONECTADO AO /HOMEWORK) ================= */}
@@ -614,7 +668,7 @@ export default function MenuPage() {
       </main>
 
       {/* ============================================================
-          MODAL DE LEITURA DE NOTÍCIA
+          MODAL DE LEITURA (DESTAQUES DO WIDGET & NOTÍCIAS DO MURAL)
          ============================================================ */}
       {selectedNews && (
         <div
